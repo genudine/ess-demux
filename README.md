@@ -5,13 +5,10 @@ This service guarantees one thing to you; it will have a websocket connected wit
 The specific flow is as follows:
 
 1. If https://push.nanite-systems.net/ is up, the client websocket is wired to that.
-2. Else, connect to https://push.planetside2.com/ based on `?environment={}`, and the client websocket is wired to either 1 or 3 of those.
+2. Else, connect to https://push.planetside2.com/ and multiplex the 3 environments.
+3. If that fails, the client websocket will fail, and you should attempt to reconnect.
 
-   - If environment = `all`, it will connect 3 times to `pc`, `ps4us`, and `ps4eu`.
-   - Else, connect to specified environment.
-   - Also, try reconnecting to the main socket every minute.
-
-3. If that fails, the client websocket will never respond.
+This service is designed to run as a sidecar, not a public service, and opening it to the public is at your own risk.
 
 ## Why would you want this?
 
@@ -29,15 +26,15 @@ Saerro **does** want PS4 data, so we use the ess-demux service.
 
 ## How to use this
 
-The service runs on port 8007 by default, you can change it to whatever via `PORT`, if you're using this as a bare service. You may also change the `DEFAULT_SERVICE_ID` from `s:example`; allowing you to omit this from the URL.
+The service runs on port 8007 by default, you can change it to whatever via `PORT`, if you're using this as a bare service. You must set `SERVICE_ID`; allowing you to omit this from the URL.
 
 `docker run -d -p 8007:8007 ghcr.io/genudine/ess-demux/ess-demux:latest`
 
-Connect to `ws://localhost:8007/streaming?environment=all&service-id=s:example`
+Connect to `ws://localhost:8007` (any other part of the URL is optional and ignored...)
 
 Send subscriptions like any other ESS-compatible websocket.
 
-Upon connection, you can expect an event like this:
+Upon connection, you can expect an event like this to validate what we're connected to.
 
 ```json
 {
