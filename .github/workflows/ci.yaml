@@ -1,0 +1,27 @@
+name: "CI"
+
+on: [push, pull_request]
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Log in to the Container registry
+        uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - run: docker buildx create --use --driver=docker-container
+      - run: |
+          TAG_LATEST_IF_MASTER=$(if [ "$GITHUB_REF_NAME" = "main" ]; then echo "-t ghcr.io/${{ github.repository }}/ess-demux:latest"; else echo ""; fi)
+          docker buildx build . \
+            -t ghcr.io/${{ github.repository }}/ess-demux:${{ github.sha }} $TAG_LATEST_IF_MASTER \
+            --push \
+            --cache-to type=gha,scope=$GITHUB_REF_NAME-ess-demux \
+            --cache-from type=gha,scope=$GITHUB_REF_NAME-ess-demux
